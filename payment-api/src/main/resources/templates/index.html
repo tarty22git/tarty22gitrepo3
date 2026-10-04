@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${appName}">GlobalPay Console</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar-brand { font-weight: 700; letter-spacing: 0.5px; }
+        .nav-tabs .nav-link { font-weight: 600; color: #495057; border: none; padding: 12px 20px; }
+        .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background-color: transparent; }
+        .card-custom { border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .metric-card { background: white; border-left: 5px solid #0d6efd; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 py-3 shadow-sm">
+    <a class="navbar-brand text-white" href="#" id="brandName" th:text="${appName}"><i class="bi bi-globe2 me-2"></i>GlobalPay Platform</a>
+    <div class="ms-auto d-flex align-items-center text-white">
+        <span class="me-3"><i class="bi bi-person-circle me-1"></i> User: <strong th:text="${username}">admin</strong> (<span th:text="${userRole}">ADMIN</span>)</span>
+        <a href="/swagger-ui.html" target="_blank" class="btn btn-outline-info btn-sm me-2"><i class="bi bi-code-slash me-1"></i>Swagger UI</a>
+        <a href="/logout" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
+    </div>
+</nav>
+
+<div class="container-fluid px-4 py-4">
+    <!-- TAB NAVIGATION -->
+    <ul class="nav nav-tabs mb-4" id="mainTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button"><i class="bi bi-speedometer2 me-2"></i>Realtime Dashboard</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="gateways-tab" data-bs-toggle="tab" data-bs-target="#gateways" type="button"><i class="bi bi-cpu me-2"></i>Payment Gateways</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="operations-tab" data-bs-toggle="tab" data-bs-target="#operations" type="button"><i class="bi bi-check2-square me-2"></i>Maker-Checker Workflow</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button"><i class="bi bi-people me-2"></i>User Maintenance</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button"><i class="bi bi-bar-chart-line me-2"></i>Online Reports</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button"><i class="bi bi-gear me-2"></i>System Settings</button>
+        </li>
+    </ul>
+
+    <!-- TAB CONTENTS -->
+    <div class="tab-content" id="mainTabContent">
+
+        <!-- TAB 1: REALTIME DASHBOARD -->
+        <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <small class="text-muted fw-bold">REGISTERED GATEWAYS</small>
+                        <h2 class="mt-2 text-primary" id="metricGateways">4</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card" style="border-left-color: #198754;">
+                        <small class="text-muted fw-bold">ACTIVE GATEWAYS</small>
+                        <h2 class="mt-2 text-success" id="metricActive">4</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card" style="border-left-color: #ffc107;">
+                        <small class="text-muted fw-bold">WORKER HANDLERS</small>
+                        <h2 class="mt-2 text-warning" id="metricWorkers">12</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card" style="border-left-color: #0dcaf0;">
+                        <small class="text-muted fw-bold">TOTAL TRANSACTIONS</small>
+                        <h2 class="mt-2 text-info" id="metricTx">0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-custom p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-activity text-primary me-2"></i>Live Gateway Worker Status</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Gateway Provider</th>
+                                <th>Status</th>
+                                <th>Worker Pool Size</th>
+                                <th>Processed Tx Count</th>
+                                <th>Total Refunds</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboardTableBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: PAYMENT GATEWAYS -->
+        <div class="tab-pane fade" id="gateways" role="tabpanel">
+            <div class="card card-custom p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-sliders me-2 text-primary"></i>Gateway Control & Worker Scaling</h5>
+                <div class="row" id="gatewayCardsContainer">
+                    <!-- Cards populated via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: MAKER-CHECKER WORKFLOW -->
+        <div class="tab-pane fade" id="operations" role="tabpanel">
+            <div class="row">
+                <div class="col-md-5 mb-4">
+                    <div class="card card-custom p-4">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-send me-2 text-primary"></i>Submit New Payment (Maker)</h5>
+                        <form id="paymentForm">
+                            <div class="mb-3">
+                                <label class="form-label">Transaction ID</label>
+                                <input type="text" id="txId" class="form-control" required placeholder="TXN-1001">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Gateway Provider</label>
+                                <select id="txProvider" class="form-select">
+                                    <option value="STRIPE">Stripe</option>
+                                    <option value="PAYPAL">PayPal</option>
+                                    <option value="KLARNA">Klarna</option>
+                                    <option value="RAZORPAY">Razorpay</option>
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-7 mb-3">
+                                    <label class="form-label">Amount</label>
+                                    <input type="number" step="0.01" id="txAmount" class="form-control" value="250.00" required>
+                                </div>
+                                <div class="col-md-5 mb-3">
+                                    <label class="form-label">Currency</label>
+                                    <input type="text" id="txCurrency" class="form-control" value="USD" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Payer Email / ID</label>
+                                <input type="text" id="txPayer" class="form-control" value="payer@customer.com">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-circle me-1"></i>Submit for Approval</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="card card-custom p-4">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-hourglass-split me-2 text-warning"></i>Pending Requests (Checker Review)</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Type</th>
+                                        <th>Maker</th>
+                                        <th>Payload Summary</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pendingRequestsTable">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: USER MAINTENANCE -->
+        <div class="tab-pane fade" id="users" role="tabpanel">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card card-custom p-4">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-person-plus me-2 text-primary"></i>Create New User</h5>
+                        <form id="newUserForm">
+                            <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" id="newUsername" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" id="newPassword" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="newEmail" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                <input type="text" id="newPhone" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Role</label>
+                                <select id="newRole" class="form-select">
+                                    <option value="ADMIN">ADMIN</option>
+                                    <option value="MAKER">MAKER</option>
+                                    <option value="CHECKER">CHECKER</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100"><i class="bi bi-person-check me-1"></i>Create User</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card card-custom p-4">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-people-fill me-2 text-primary"></i>Platform Accounts</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Role</th>
+                                        <th>Email / Phone</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: ONLINE REPORTS -->
+        <div class="tab-pane fade" id="reports" role="tabpanel">
+            <div class="card card-custom p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0"><i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i>Configurable Online Reports</h5>
+                    <div>
+                        <select id="reportTypeSelect" class="form-select d-inline-block w-auto me-2" onchange="loadReport()">
+                            <option value="GATEWAYS">Gateway Metrics Report</option>
+                            <option value="TRANSACTIONS">Transaction History Report</option>
+                            <option value="AUDIT">Audit Logs Report</option>
+                        </select>
+                        <button class="btn btn-outline-success" onclick="exportCsv()"><i class="bi bi-download me-1"></i>Export CSV</button>
+                    </div>
+                </div>
+                <div id="reportContainer" class="table-responsive">
+                    <!-- Report content table rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: SYSTEM SETTINGS -->
+        <div class="tab-pane fade" id="settings" role="tabpanel">
+            <div class="card card-custom p-4" style="max-width: 600px;">
+                <h5 class="fw-bold mb-3"><i class="bi bi-sliders2 me-2 text-primary"></i>Global Platform Settings</h5>
+                <form id="settingsForm">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Configurable Application Name</label>
+                        <input type="text" id="cfgAppName" class="form-control" th:value="${appName}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Authentication Mode Switch</label>
+                        <select id="cfgAuthMode" class="form-select">
+                            <option value="DB">Database Authentication (BCrypt Hash)</option>
+                            <option value="LDAP">Windows Active Directory / LDAP</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="cfgNotifications" th:checked="${notificationsEnabled}">
+                            <label class="form-check-label font-weight-bold" for="cfgNotifications">SMS & Email Authentication/Account Alerts (Toggle Switch)</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Save Settings</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        loadDashboard();
+        setInterval(loadDashboard, 3000);
+        loadPendingRequests();
+        loadUsers();
+        loadReport();
+    });
+
+    function loadDashboard() {
+        fetch('/api/gateways')
+            .then(res => res.json())
+            .then(data => {
+                let activeCount = 0;
+                let totalWorkers = 0;
+                let totalTx = 0;
+
+                let tbody = '';
+                let cardHtml = '';
+
+                data.forEach(gw => {
+                    if(gw.running) activeCount++;
+                    totalWorkers += gw.workerPoolSize;
+                    totalTx += gw.totalProcessedCount;
+
+                    let statusBadge = gw.running ? '<span class="badge bg-success">RUNNING</span>' : '<span class="badge bg-danger">STOPPED</span>';
+                    tbody += `<tr>
+                        <td><strong>${gw.provider}</strong></td>
+                        <td>${statusBadge}</td>
+                        <td>${gw.workerPoolSize} Handlers</td>
+                        <td>${gw.totalProcessedCount}</td>
+                        <td>${gw.totalRefundCount}</td>
+                        <td>
+                            ${gw.running ?
+                                `<button class="btn btn-danger btn-sm" onclick="toggleGateway('${gw.provider}', 'stop')">Stop</button>` :
+                                `<button class="btn btn-success btn-sm" onclick="toggleGateway('${gw.provider}', 'start')">Start</button>`}
+                        </td>
+                    </tr>`;
+
+                    cardHtml += `<div class="col-md-6 mb-3">
+                        <div class="card p-3 border">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold m-0">${gw.provider}</h6>
+                                ${statusBadge}
+                            </div>
+                            <div class="mb-2">Worker Pool Size: <strong>${gw.workerPoolSize}</strong></div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm ${gw.running ? 'btn-outline-danger' : 'btn-outline-success'}" onclick="toggleGateway('${gw.provider}', '${gw.running ? 'stop' : 'start'}')">${gw.running ? 'Stop Gateway' : 'Start Gateway'}</button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="scalePool('${gw.provider}')">Scale Handlers</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+
+                document.getElementById('metricGateways').innerText = data.length;
+                document.getElementById('metricActive').innerText = activeCount;
+                document.getElementById('metricWorkers').innerText = totalWorkers;
+                document.getElementById('metricTx').innerText = totalTx;
+
+                document.getElementById('dashboardTableBody').innerHTML = tbody;
+                document.getElementById('gatewayCardsContainer').innerHTML = cardHtml;
+            });
+    }
+
+    function toggleGateway(provider, action) {
+        fetch(`/api/gateways/${provider}/${action}`, { method: 'POST' })
+            .then(() => loadDashboard());
+    }
+
+    function scalePool(provider) {
+        let size = prompt(`Enter new worker pool size for ${provider}:`, "5");
+        if(size) {
+            fetch(`/api/gateways/${provider}/scale?poolSize=${size}`, { method: 'POST' })
+                .then(() => loadDashboard());
+        }
+    }
+
+    document.getElementById('paymentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let payload = {
+            transactionId: document.getElementById('txId').value,
+            provider: document.getElementById('txProvider').value,
+            amount: parseFloat(document.getElementById('txAmount').value),
+            currency: document.getElementById('txCurrency').value,
+            payerId: document.getElementById('txPayer').value,
+            description: "Online transaction submission"
+        };
+
+        fetch('/api/operations/submit-payment', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(res => res.json()).then(data => {
+            alert('Transaction submitted for Checker approval. Request ID: ' + data.id);
+            document.getElementById('txId').value = "TXN-" + Math.floor(Math.random() * 9000 + 1000);
+            loadPendingRequests();
+        });
+    });
+
+    function loadPendingRequests() {
+        fetch('/api/operations/pending')
+            .then(res => res.json())
+            .then(data => {
+                let tbody = '';
+                if(data.length === 0) {
+                    tbody = '<tr><td colspan="5" class="text-center text-muted">No pending requests requiring approval.</td></tr>';
+                } else {
+                    data.forEach(req => {
+                        tbody += `<tr>
+                            <td>${req.id}</td>
+                            <td><span class="badge bg-warning text-dark">${req.requestType}</span></td>
+                            <td>${req.makerUser}</td>
+                            <td><small>${req.payloadJson}</small></td>
+                            <td>
+                                <button class="btn btn-success btn-sm me-1" onclick="approveReq(${req.id})">Approve</button>
+                                <button class="btn btn-danger btn-sm" onclick="rejectReq(${req.id})">Reject</button>
+                            </td>
+                        </tr>`;
+                    });
+                }
+                document.getElementById('pendingRequestsTable').innerHTML = tbody;
+            });
+    }
+
+    function approveReq(id) {
+        fetch(`/api/operations/requests/${id}/approve`, { method: 'POST' })
+            .then(res => {
+                if(!res.ok) alert("Approval failed (Maker and Checker cannot be the same user)");
+                loadPendingRequests();
+                loadDashboard();
+            });
+    }
+
+    function rejectReq(id) {
+        fetch(`/api/operations/requests/${id}/reject`, { method: 'POST' })
+            .then(() => {
+                loadPendingRequests();
+            });
+    }
+
+    document.getElementById('newUserForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let username = document.getElementById('newUsername').value;
+        let password = document.getElementById('newPassword').value;
+        let email = document.getElementById('newEmail').value;
+        let phone = document.getElementById('newPhone').value;
+        let role = document.getElementById('newRole').value;
+
+        fetch(`/api/users/create?username=${username}&password=${password}&email=${email}&phone=${phone}&role=${role}`, { method: 'POST' })
+            .then(res => {
+                if(res.ok) {
+                    alert('User created successfully!');
+                    loadUsers();
+                } else {
+                    alert('Failed to create user.');
+                }
+            });
+    });
+
+    function loadUsers() {
+        fetch('/api/users')
+            .then(res => res.json())
+            .then(data => {
+                let tbody = '';
+                data.forEach(u => {
+                    let status = u.accountLocked ? '<span class="badge bg-danger">LOCKED</span>' : '<span class="badge bg-success">ACTIVE</span>';
+                    tbody += `<tr>
+                        <td><strong>${u.username}</strong></td>
+                        <td><span class="badge bg-primary">${u.role}</span></td>
+                        <td>${u.email}<br><small class="text-muted">${u.phone}</small></td>
+                        <td>${status}</td>
+                        <td>
+                            ${u.accountLocked ?
+                                `<button class="btn btn-warning btn-sm me-1" onclick="unlockUser('${u.username}')">Unlock</button>` :
+                                `<button class="btn btn-outline-danger btn-sm me-1" onclick="lockUser('${u.username}')">Lock</button>`}
+                            <button class="btn btn-outline-secondary btn-sm" onclick="resetPwd('${u.username}')">Reset Pwd</button>
+                        </td>
+                    </tr>`;
+                });
+                document.getElementById('usersTableBody').innerHTML = tbody;
+            });
+    }
+
+    function lockUser(username) {
+        fetch(`/api/users/${username}/lock`, { method: 'POST' }).then(() => loadUsers());
+    }
+
+    function unlockUser(username) {
+        fetch(`/api/users/${username}/unlock`, { method: 'POST' }).then(() => loadUsers());
+    }
+
+    function resetPwd(username) {
+        let newP = prompt(`Enter new password for ${username}:`, username);
+        if(newP) {
+            fetch(`/api/users/${username}/reset-password?newPassword=${newP}`, { method: 'POST' })
+                .then(() => alert('Password reset successfully!'));
+        }
+    }
+
+    function loadReport() {
+        let type = document.getElementById('reportTypeSelect').value;
+        fetch(`/api/reports/online?type=${type}`)
+            .then(res => res.json())
+            .then(res => {
+                let container = document.getElementById('reportContainer');
+                let html = `<p>Total Records: <strong>${res.totalRecords}</strong> | Generated At: <code>${res.generatedAt}</code></p>`;
+                html += `<table class="table table-bordered table-striped"><thead><tr>`;
+
+                if(res.data && res.data.length > 0) {
+                    let keys = Object.keys(res.data[0]);
+                    keys.forEach(k => html += `<th>${k}</th>`);
+                    html += `</tr></thead><tbody>`;
+
+                    res.data.forEach(row => {
+                        html += `<tr>`;
+                        keys.forEach(k => {
+                            let val = typeof row[k] === 'object' ? JSON.stringify(row[k]) : row[k];
+                            html += `<td>${val !== null ? val : ''}</td>`;
+                        });
+                        html += `</tr>`;
+                    });
+                    html += `</tbody></table>`;
+                } else {
+                    html += `</tr></thead><tbody><tr><td class="text-muted">No report data found.</td></tr></tbody></table>`;
+                }
+                container.innerHTML = html;
+            });
+    }
+
+    function exportCsv() {
+        let type = document.getElementById('reportTypeSelect').value;
+        window.location.href = `/api/reports/export/csv?type=${type}`;
+    }
+
+    document.getElementById('settingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let appName = document.getElementById('cfgAppName').value;
+        let authMode = document.getElementById('cfgAuthMode').value;
+        let notifications = document.getElementById('cfgNotifications').checked;
+
+        fetch(`/api/users/settings?appName=${encodeURIComponent(appName)}&authMode=${authMode}&notificationsEnabled=${notifications}`, { method: 'POST' })
+            .then(() => {
+                alert('Settings updated successfully!');
+                location.reload();
+            });
+    });
+</script>
+</body>
+</html>
